@@ -24,19 +24,38 @@ def extract_data(dvc_path: str, local_path: str) -> str:
     Returns:
         Path to the extracted raw CSV file
     """
-    # Run dvc pull to get the data
+    # Check if file already exists locally
+    if os.path.exists(local_path):
+        print(f"Data file already exists at {local_path}, skipping DVC pull")
+        mlflow.log_param("data_source", "local_file")
+        mlflow.log_artifact(local_path, "raw_data")
+        return local_path
+    
+    # Try to run dvc pull to get the data
     try:
-        subprocess.run(['dvc', 'pull', dvc_path], check=True, capture_output=True)
+        result = subprocess.run(
+            ['dvc', 'pull', dvc_path],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        print(f"DVC pull successful: {result.stdout}")
         mlflow.log_param("dvc_path", dvc_path)
+        mlflow.log_param("data_source", "dvc_pull")
         mlflow.log_param("data_extracted", True)
     except subprocess.CalledProcessError as e:
-        print(f"Warning: DVC pull failed: {e}")
-        # Continue if file already exists locally
-        if not os.path.exists(local_path):
-            raise
+        print(f"Warning: DVC pull failed: {e.stderr if hasattr(e, 'stderr') else str(e)}")
+        print("Attempting to continue with local file if it exists...")
+    except FileNotFoundError:
+        print("DVC not found in PATH, skipping DVC pull")
+        print("Attempting to use local file if it exists...")
     
+    # Check if file exists after DVC pull attempt
     if not os.path.exists(local_path):
-        raise FileNotFoundError(f"Data file not found at {local_path} after DVC pull")
+        raise FileNotFoundError(
+            f"Data file not found at {local_path}. "
+            f"Please ensure the file exists locally or set up DVC remote storage."
+        )
     
     mlflow.log_artifact(local_path, "raw_data")
     return local_path

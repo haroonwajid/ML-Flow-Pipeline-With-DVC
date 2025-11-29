@@ -12,6 +12,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Fetch all history for DVC
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -23,15 +25,35 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
+    - name: Initialize DVC (if needed)
+      run: |
+        if [ ! -d .dvc ]; then
+          dvc init --no-scm || echo "DVC init failed or already initialized"
+        fi
+    
     - name: DVC Pull and Status
       run: |
-        dvc pull || echo "DVC pull failed (may need remote setup)"
-        dvc status || echo "DVC status check"
+        if [ -f data.dvc ] || [ -f data/raw/boston_housing.csv.dvc ]; then
+          dvc pull || echo "DVC pull failed (may need remote setup, using local file if available)"
+        else
+          echo "No DVC file found, using data from repository"
+        fi
+        dvc status || echo "DVC status check (non-critical)"
+    
+    - name: Verify data file exists
+      run: |
+        if [ ! -f data/raw/boston_housing.csv ]; then
+          echo "Error: Data file not found!"
+          echo "Please ensure data/raw/boston_housing.csv exists in the repository"
+          exit 1
+        else
+          echo "Data file found: data/raw/boston_housing.csv"
+          ls -lh data/raw/boston_housing.csv
+        fi
     
     - name: Run Pipeline
       run: |
         python -m pipelines.pipeline --config configs/config.yaml
-      continue-on-error: true
     
     - name: Upload MLflow artifacts
       if: always()

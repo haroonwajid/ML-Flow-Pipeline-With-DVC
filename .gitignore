@@ -216,7 +216,9 @@ mlruns/
 mlartifacts/
 
 # Data (tracked by DVC)
-data/raw/*.csv
+# Note: data/raw/boston_housing.csv can be committed for CI purposes
+# Uncomment the line below if you want to ignore CSV files in data/raw/
+# data/raw/*.csv
 data/processed/*.npy
 data/processed/*.pkl
 
