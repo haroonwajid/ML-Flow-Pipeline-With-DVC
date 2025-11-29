@@ -1,0 +1,25 @@
+name: Extract Data Component
+description: Extracts data using DVC pull or local file system
+inputs:
+  - name: dvc_path
+    type: string
+    description: Path to the DVC file (e.g., "data.dvc")
+    default: "data.dvc"
+  - name: local_path
+    type: string
+    description: Local path where data will be stored
+    default: "data/raw/boston_housing.csv"
+outputs:
+  - name: raw_data_path
+    type: string
+    description: Path to the extracted raw CSV file
+implementation:
+  type: python_function
+  module: src.pipeline_components
+  function: extract_data
+  parameters:
+    dvc_path: {input: dvc_path}
+    local_path: {input: local_path}
+  returns:
+    raw_data_path: {output: raw_data_path}
+

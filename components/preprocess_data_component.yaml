@@ -1,0 +1,50 @@
+name: Preprocess Data Component
+description: Preprocesses data and creates train/test split with feature scaling
+inputs:
+  - name: input_csv
+    type: string
+    description: Path to input CSV file
+  - name: output_dir
+    type: string
+    description: Directory to save processed data
+    default: "data/processed"
+  - name: test_size
+    type: float
+    description: Proportion of data to use for testing
+    default: 0.2
+  - name: random_state
+    type: int
+    description: Random seed for reproducibility
+    default: 42
+outputs:
+  - name: X_train
+    type: string
+    description: Path to training features (numpy array)
+  - name: y_train
+    type: string
+    description: Path to training labels (numpy array)
+  - name: X_test
+    type: string
+    description: Path to test features (numpy array)
+  - name: y_test
+    type: string
+    description: Path to test labels (numpy array)
+  - name: scaler
+    type: string
+    description: Path to fitted StandardScaler
+implementation:
+  type: python_function
+  module: src.pipeline_components
+  function: preprocess_data
+  parameters:
+    input_csv: {input: input_csv}
+    output_dir: {input: output_dir}
+    test_size: {input: test_size}
+    random_state: {input: random_state}
+  returns:
+    X_train: {output: X_train}
+    y_train: {output: y_train}
+    X_test: {output: X_test}
+    y_test: {output: y_test}
+    scaler: {output: scaler}
+

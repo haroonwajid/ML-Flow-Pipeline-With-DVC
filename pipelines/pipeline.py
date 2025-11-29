@@ -46,9 +46,21 @@ def run_pipeline(config_path: str) -> None:
         mlflow.set_tracking_uri("file:./mlruns")
         print("MLflow tracking URI set to: file:./mlruns")
         
+        # Create or get experiment
+        try:
+            experiment = mlflow.get_experiment_by_name("boston_housing_experiment")
+            if experiment is None:
+                experiment_id = mlflow.create_experiment("boston_housing_experiment")
+            else:
+                experiment_id = experiment.experiment_id
+            mlflow.set_experiment("boston_housing_experiment")
+        except Exception as e:
+            print(f"Warning: Could not set experiment: {e}")
+            experiment_id = "0"
+        
         # Start MLflow run (use context manager for proper cleanup)
         try:
-            with mlflow.start_run(run_name=config['run_name']):
+            with mlflow.start_run(run_name=config['run_name'], experiment_id=experiment_id):
                 # Log configuration
                 try:
                     mlflow.log_params({

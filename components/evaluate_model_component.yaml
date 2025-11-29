@@ -1,0 +1,46 @@
+name: Evaluate Model Component
+description: Evaluates a trained model and computes regression metrics
+inputs:
+  - name: model_uri
+    type: string
+    description: MLflow model URI or local file path
+  - name: X_test_path
+    type: string
+    description: Path to test features (numpy array)
+  - name: y_test_path
+    type: string
+    description: Path to test labels (numpy array)
+  - name: metrics_output_path
+    type: string
+    description: Path to save metrics JSON file
+    default: "outputs/metrics/metrics.json"
+outputs:
+  - name: mse
+    type: float
+    description: Mean Squared Error
+  - name: rmse
+    type: float
+    description: Root Mean Squared Error
+  - name: mae
+    type: float
+    description: Mean Absolute Error
+  - name: r2
+    type: float
+    description: R-squared score
+  - name: metrics_file
+    type: string
+    description: Path to saved metrics JSON file
+implementation:
+  type: python_function
+  module: src.pipeline_components
+  function: evaluate_model
+  parameters:
+    model_uri: {input: model_uri}
+    test_data_paths:
+      X_test: {input: X_test_path}
+      y_test: {input: y_test_path}
+    metrics_output_path: {input: metrics_output_path}
+  returns:
+    metrics: {output: metrics}
+    metrics_file: {output: metrics_file}
+

@@ -221,16 +221,27 @@ def evaluate_model(
     # Load model - handle both MLflow URI and local file path
     try:
         if model_uri.startswith('file://'):
-            # Remove file:// prefix and load directly with joblib
+            # Remove file:// prefix
             model_path = model_uri.replace('file://', '')
-            print(f"Loading model from local file: {model_path}")
-            model = joblib.load(model_path)
-        elif os.path.exists(model_uri):
+            # Check if it's a directory (MLflow artifact) or file
+            if os.path.isdir(model_path):
+                # It's an MLflow model directory, use mlflow to load
+                print(f"Loading model from MLflow directory: {model_path}")
+                model = mlflow.sklearn.load_model(model_uri)
+            elif os.path.exists(model_path):
+                # Direct file path
+                print(f"Loading model from local file: {model_path}")
+                model = joblib.load(model_path)
+            else:
+                # Try as MLflow URI
+                print(f"Loading model from MLflow URI: {model_uri}")
+                model = mlflow.sklearn.load_model(model_uri)
+        elif os.path.isfile(model_uri):
             # Direct file path
             print(f"Loading model from local file: {model_uri}")
             model = joblib.load(model_uri)
         else:
-            # Try MLflow URI
+            # Try MLflow URI (could be directory or MLflow format)
             print(f"Loading model from MLflow URI: {model_uri}")
             model = mlflow.sklearn.load_model(model_uri)
     except Exception as e:

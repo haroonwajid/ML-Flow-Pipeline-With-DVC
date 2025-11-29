@@ -1,0 +1,47 @@
+name: Train Model Component
+description: Trains a RandomForestRegressor model on the training data
+inputs:
+  - name: X_train_path
+    type: string
+    description: Path to training features (numpy array)
+  - name: y_train_path
+    type: string
+    description: Path to training labels (numpy array)
+  - name: model_output_path
+    type: string
+    description: Directory to save the trained model
+    default: "outputs/models"
+  - name: n_estimators
+    type: int
+    description: Number of trees in the forest
+    default: 200
+  - name: max_depth
+    type: int
+    description: Maximum depth of the trees
+    default: 10
+  - name: random_state
+    type: int
+    description: Random seed for reproducibility
+    default: 42
+outputs:
+  - name: model_uri
+    type: string
+    description: MLflow model URI or local file path
+  - name: model_path
+    type: string
+    description: Local path to saved model file
+implementation:
+  type: python_function
+  module: src.pipeline_components
+  function: train_model
+  parameters:
+    train_data_paths:
+      X_train: {input: X_train_path}
+      y_train: {input: y_train_path}
+    model_output_path: {input: model_output_path}
+    n_estimators: {input: n_estimators}
+    max_depth: {input: max_depth}
+    random_state: {input: random_state}
+  returns:
+    model_uri: {output: model_uri}
+
