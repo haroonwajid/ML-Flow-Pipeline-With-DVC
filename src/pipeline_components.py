@@ -190,8 +190,8 @@ def train_model(
         print(f"Model logged to MLflow: {model_uri}")
     except Exception as e:
         print(f"Warning: Failed to log model to MLflow: {e}")
-        # Return a local URI if MLflow fails
-        model_uri = f"file://{os.path.abspath(model_path)}"
+        # Return a local file path if MLflow fails
+        model_uri = os.path.abspath(model_path)
     
     return model_uri
 
@@ -215,8 +215,24 @@ def evaluate_model(
     X_test = np.load(test_data_paths['X_test'])
     y_test = np.load(test_data_paths['y_test'])
     
-    # Load model from MLflow
-    model = mlflow.sklearn.load_model(model_uri)
+    # Load model - handle both MLflow URI and local file path
+    try:
+        if model_uri.startswith('file://'):
+            # Remove file:// prefix and load directly with joblib
+            model_path = model_uri.replace('file://', '')
+            print(f"Loading model from local file: {model_path}")
+            model = joblib.load(model_path)
+        elif os.path.exists(model_uri):
+            # Direct file path
+            print(f"Loading model from local file: {model_uri}")
+            model = joblib.load(model_uri)
+        else:
+            # Try MLflow URI
+            print(f"Loading model from MLflow URI: {model_uri}")
+            model = mlflow.sklearn.load_model(model_uri)
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        raise
     
     # Make predictions
     y_pred = model.predict(X_test)
