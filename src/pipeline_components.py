@@ -27,8 +27,11 @@ def extract_data(dvc_path: str, local_path: str) -> str:
     # Check if file already exists locally
     if os.path.exists(local_path):
         print(f"Data file already exists at {local_path}, skipping DVC pull")
-        mlflow.log_param("data_source", "local_file")
-        mlflow.log_artifact(local_path, "raw_data")
+        try:
+            mlflow.log_param("data_source", "local_file")
+            mlflow.log_artifact(local_path, "raw_data")
+        except Exception as e:
+            print(f"Warning: Failed to log to MLflow: {e}")
         return local_path
     
     # Try to run dvc pull to get the data
