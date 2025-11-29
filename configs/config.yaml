@@ -1,0 +1,17 @@
+run_name: "boston_housing_mlflow"
+seed: 42
+
+data:
+  dvc_path: "data.dvc"
+  local_raw_path: "data/raw/boston_housing.csv"
+  processed_dir: "data/processed"
+  test_size: 0.2
+
+model:
+  output_dir: "outputs/models"
+  n_estimators: 200
+  max_depth: 10
+
+evaluation:
+  output_path: "outputs/metrics/metrics.json"
+
