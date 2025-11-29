@@ -37,7 +37,9 @@ def save_numpy_array(arr: np.ndarray, file_path: str) -> None:
         arr: Numpy array to save
         file_path: Path where to save the array
     """
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    dir_path = os.path.dirname(file_path)
+    if dir_path:  # Only create directory if path contains a directory
+        os.makedirs(dir_path, exist_ok=True)
     np.save(file_path, arr)
 
 
@@ -60,7 +62,9 @@ def save_json(data: dict, file_path: str) -> None:
         data: Dictionary to save
         file_path: Path where to save the JSON file
     """
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    dir_path = os.path.dirname(file_path)
+    if dir_path:  # Only create directory if path contains a directory
+        os.makedirs(dir_path, exist_ok=True)
     with open(file_path, 'w') as f:
         json.dump(data, f, indent=4)
 

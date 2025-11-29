@@ -118,12 +118,15 @@ def preprocess_data(
     joblib.dump(scaler, scaler_path)
     
     # Log preprocessing parameters and artifacts
-    mlflow.log_param("test_size", test_size)
-    mlflow.log_param("random_state", random_state)
-    mlflow.log_param("train_samples", len(X_train))
-    mlflow.log_param("test_samples", len(X_test))
-    mlflow.log_param("n_features", X_train.shape[1])
-    mlflow.log_artifact(scaler_path, "preprocessing")
+    try:
+        mlflow.log_param("test_size", test_size)
+        mlflow.log_param("random_state", random_state)
+        mlflow.log_param("train_samples", len(X_train))
+        mlflow.log_param("test_samples", len(X_test))
+        mlflow.log_param("n_features", X_train.shape[1])
+        mlflow.log_artifact(scaler_path, "preprocessing")
+    except Exception as e:
+        print(f"Warning: Failed to log preprocessing to MLflow: {e}")
     
     return {
         'X_train': train_X_path,
@@ -165,23 +168,30 @@ def train_model(
     )
     model.fit(X_train, y_train)
     
-    # Log model parameters
-    mlflow.log_param("n_estimators", n_estimators)
-    mlflow.log_param("max_depth", max_depth)
-    mlflow.log_param("random_state", random_state)
-    mlflow.log_param("model_type", "RandomForestRegressor")
-    
-    # Save model locally
+    # Save model locally first
     os.makedirs(model_output_path, exist_ok=True)
     model_path = os.path.join(model_output_path, "model.pkl")
     joblib.dump(model, model_path)
+    print(f"Model saved locally to: {model_path}")
     
-    # Log model to MLflow
-    mlflow.sklearn.log_model(model, "model")
-    model_uri = mlflow.get_artifact_uri("model")
-    
-    # Log model file as artifact
-    mlflow.log_artifact(model_path, "models")
+    # Log model parameters and to MLflow
+    try:
+        mlflow.log_param("n_estimators", n_estimators)
+        mlflow.log_param("max_depth", max_depth)
+        mlflow.log_param("random_state", random_state)
+        mlflow.log_param("model_type", "RandomForestRegressor")
+        
+        # Log model to MLflow
+        mlflow.sklearn.log_model(model, "model")
+        model_uri = mlflow.get_artifact_uri("model")
+        
+        # Log model file as artifact
+        mlflow.log_artifact(model_path, "models")
+        print(f"Model logged to MLflow: {model_uri}")
+    except Exception as e:
+        print(f"Warning: Failed to log model to MLflow: {e}")
+        # Return a local URI if MLflow fails
+        model_uri = f"file://{os.path.abspath(model_path)}"
     
     return model_uri
 
@@ -216,10 +226,15 @@ def evaluate_model(
     
     # Save metrics to JSON
     save_json(metrics, metrics_output_path)
+    print(f"Metrics saved to: {metrics_output_path}")
     
     # Log metrics to MLflow
-    mlflow.log_metrics(metrics)
-    mlflow.log_artifact(metrics_output_path, "metrics")
+    try:
+        mlflow.log_metrics(metrics)
+        mlflow.log_artifact(metrics_output_path, "metrics")
+        print("Metrics logged to MLflow successfully")
+    except Exception as e:
+        print(f"Warning: Failed to log metrics to MLflow: {e}")
     
     return metrics
 

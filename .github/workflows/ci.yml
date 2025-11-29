@@ -60,9 +60,18 @@ jobs:
           ls -lh data/raw/boston_housing.csv
         fi
     
+    - name: List project structure
+      run: |
+        echo "Project structure:"
+        find . -type f -name "*.py" -o -name "*.yaml" -o -name "*.csv" | head -20
+        echo ""
+        echo "Data directory:"
+        ls -la data/raw/ || echo "data/raw/ not found"
+    
     - name: Run Pipeline
       run: |
-        python -m pipelines.pipeline --config configs/config.yaml
+        set -e  # Exit on error
+        python -m pipelines.pipeline --config configs/config.yaml 2>&1
       env:
         PYTHONUNBUFFERED: 1
     
