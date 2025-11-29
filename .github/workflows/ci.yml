@@ -25,6 +25,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
+    - name: Verify imports
+      run: |
+        python -c "import yaml; import mlflow; import pandas; import numpy; import sklearn; import joblib; print('All imports successful')"
+    
+    - name: Test pipeline imports
+      run: |
+        python -c "from src.pipeline_components import extract_data, preprocess_data, train_model, evaluate_model; print('Pipeline components imported successfully')"
+        python -c "from pipelines.pipeline import load_config, run_pipeline; print('Pipeline module imported successfully')"
+    
     - name: Initialize DVC (if needed)
       run: |
         if [ ! -d .dvc ]; then
@@ -54,6 +63,8 @@ jobs:
     - name: Run Pipeline
       run: |
         python -m pipelines.pipeline --config configs/config.yaml
+      env:
+        PYTHONUNBUFFERED: 1
     
     - name: Upload MLflow artifacts
       if: always()

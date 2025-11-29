@@ -30,70 +30,92 @@ def run_pipeline(config_path: str) -> None:
     Args:
         config_path: Path to the configuration YAML file
     """
-    # Load configuration
-    config = load_config(config_path)
+    import sys
+    import traceback
     
-    # Set MLflow tracking URI (defaults to local file store)
-    # Can be overridden with MLFLOW_TRACKING_URI environment variable
-    mlflow.set_tracking_uri("file:./mlruns")
-    
-    # Start MLflow run
-    with mlflow.start_run(run_name=config['run_name']):
-        # Log configuration
-        mlflow.log_params({
-            'seed': config['seed'],
-            'test_size': config['data']['test_size'],
-            'n_estimators': config['model']['n_estimators'],
-            'max_depth': config['model']['max_depth']
-        })
+    try:
+        # Load configuration
+        print(f"Loading configuration from: {config_path}")
+        config = load_config(config_path)
+        print("Configuration loaded successfully")
         
-        # Step 1: Extract data
-        print("Step 1: Extracting data...")
-        raw_data_path = extract_data(
-            dvc_path=config['data']['dvc_path'],
-            local_path=config['data']['local_raw_path']
-        )
-        print(f"Data extracted to: {raw_data_path}")
+        # Set MLflow tracking URI (defaults to local file store)
+        # Can be overridden with MLFLOW_TRACKING_URI environment variable
+        import os
+        os.makedirs("mlruns", exist_ok=True)
+        mlflow.set_tracking_uri("file:./mlruns")
+        print("MLflow tracking URI set to: file:./mlruns")
         
-        # Step 2: Preprocess data
-        print("Step 2: Preprocessing data...")
-        processed_data_paths = preprocess_data(
-            input_csv=raw_data_path,
-            output_dir=config['data']['processed_dir'],
-            test_size=config['data']['test_size'],
-            random_state=config['seed']
-        )
-        print(f"Data preprocessed and saved to: {config['data']['processed_dir']}")
-        
-        # Step 3: Train model
-        print("Step 3: Training model...")
-        model_uri = train_model(
-            train_data_paths={
-                'X_train': processed_data_paths['X_train'],
-                'y_train': processed_data_paths['y_train']
-            },
-            model_output_path=config['model']['output_dir'],
-            n_estimators=config['model']['n_estimators'],
-            max_depth=config['model']['max_depth'],
-            random_state=config['seed']
-        )
-        print(f"Model trained and saved. URI: {model_uri}")
-        
-        # Step 4: Evaluate model
-        print("Step 4: Evaluating model...")
-        metrics = evaluate_model(
-            model_uri=model_uri,
-            test_data_paths={
-                'X_test': processed_data_paths['X_test'],
-                'y_test': processed_data_paths['y_test']
-            },
-            metrics_output_path=config['evaluation']['output_path']
-        )
-        print(f"Model evaluated. Metrics: {metrics}")
-        print(f"Metrics saved to: {config['evaluation']['output_path']}")
-        
-        print("\nPipeline completed successfully!")
-        print(f"View results in MLflow UI: mlflow ui")
+        # Start MLflow run
+        with mlflow.start_run(run_name=config['run_name']):
+            # Log configuration
+            mlflow.log_params({
+                'seed': config['seed'],
+                'test_size': config['data']['test_size'],
+                'n_estimators': config['model']['n_estimators'],
+                'max_depth': config['model']['max_depth']
+            })
+            
+            # Step 1: Extract data
+            print("Step 1: Extracting data...")
+            raw_data_path = extract_data(
+                dvc_path=config['data']['dvc_path'],
+                local_path=config['data']['local_raw_path']
+            )
+            print(f"Data extracted to: {raw_data_path}")
+            
+            # Step 2: Preprocess data
+            print("Step 2: Preprocessing data...")
+            processed_data_paths = preprocess_data(
+                input_csv=raw_data_path,
+                output_dir=config['data']['processed_dir'],
+                test_size=config['data']['test_size'],
+                random_state=config['seed']
+            )
+            print(f"Data preprocessed and saved to: {config['data']['processed_dir']}")
+            
+            # Step 3: Train model
+            print("Step 3: Training model...")
+            model_uri = train_model(
+                train_data_paths={
+                    'X_train': processed_data_paths['X_train'],
+                    'y_train': processed_data_paths['y_train']
+                },
+                model_output_path=config['model']['output_dir'],
+                n_estimators=config['model']['n_estimators'],
+                max_depth=config['model']['max_depth'],
+                random_state=config['seed']
+            )
+            print(f"Model trained and saved. URI: {model_uri}")
+            
+            # Step 4: Evaluate model
+            print("Step 4: Evaluating model...")
+            metrics = evaluate_model(
+                model_uri=model_uri,
+                test_data_paths={
+                    'X_test': processed_data_paths['X_test'],
+                    'y_test': processed_data_paths['y_test']
+                },
+                metrics_output_path=config['evaluation']['output_path']
+            )
+            print(f"Model evaluated. Metrics: {metrics}")
+            print(f"Metrics saved to: {config['evaluation']['output_path']}")
+            
+            print("\nPipeline completed successfully!")
+            print(f"View results in MLflow UI: mlflow ui")
+            
+    except FileNotFoundError as e:
+        print(f"ERROR: File not found: {e}", file=sys.stderr)
+        traceback.print_exc()
+        sys.exit(1)
+    except KeyError as e:
+        print(f"ERROR: Missing configuration key: {e}", file=sys.stderr)
+        traceback.print_exc()
+        sys.exit(1)
+    except Exception as e:
+        print(f"ERROR: Pipeline failed with error: {e}", file=sys.stderr)
+        traceback.print_exc()
+        sys.exit(1)
 
 
 def main():

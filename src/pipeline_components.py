@@ -57,7 +57,10 @@ def extract_data(dvc_path: str, local_path: str) -> str:
             f"Please ensure the file exists locally or set up DVC remote storage."
         )
     
-    mlflow.log_artifact(local_path, "raw_data")
+    try:
+        mlflow.log_artifact(local_path, "raw_data")
+    except Exception as e:
+        print(f"Warning: Failed to log artifact to MLflow: {e}")
     return local_path
 
 
